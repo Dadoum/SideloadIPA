@@ -4,8 +4,6 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Numerics;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading.Tasks;
 using SecureRemotePassword;
 
@@ -13,37 +11,33 @@ namespace SideloadIPA
 {
     class CertificateRequest
     {
-        public static readonly CookieContainer cookies = new CookieContainer();
+        public static readonly CookieContainer Cookies = new CookieContainer();
 
-        public static readonly HttpClient client = new HttpClient(new HttpClientHandler()
+        public static readonly HttpClient Client = new HttpClient(new HttpClientHandler()
         {
-            CookieContainer = cookies,
+            CookieContainer = Cookies,
             ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
         });
 
-        public bool CheckValidationResult(ServicePoint sp,
-            X509Certificate certificate, WebRequest request, int error)
-        {
-            return true;
-        }
-
-
+        // THIS GITHUB ISSUE THREAD IS LITERALLY GOLD: https://github.com/horrorho/InflatableDonkey/issues/87 GIVE THEM LOVE, ESPECIALLY TO RobLinux
         public static async Task Main(string[] args)
         {
             // Apple ID for testing, use temp-mail.org to login.
-            var email = "hakaf67615@newmail.top";
+            var email = "compte.adam.c@gmail.com";
             var password = "Newmail90";
 
-            cookies.Add(new Cookie("dslang", "US-EN", "/", "gsa.apple.com"));
+            Cookies.Add(new Cookie("dslang", "US-EN", "/", "gsa.apple.com"));
             ServicePointManager
                     .ServerCertificateValidationCallback =
                 (sender, cert, chain, sslPolicyErrors) => true;
 
-            var client = new SrpClient();
-            var eph = client.GenerateEphemeral();
+            // Initiate SRP Client, and generate ephemeral keys
+            var srpClient = new SrpClient();
+            var eph = srpClient.GenerateEphemeral();
             
-            var key2send = "\t\t" + string.Join("\r\n\t\t", SplitInParts(ToB64(eph.Public), 60))  + "\r\n";
-            
+            // Split keys into lines
+            var splitPublic = "\t\t" + string.Join("\r\n\t\t", SplitInParts(ToB64(eph.Public), 60))  + "\r\n";
+
             var post1 = string.Format(string.Concat(
                     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n",
                     "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\r\n",
@@ -66,14 +60,14 @@ namespace SideloadIPA
                     "\t\t\t<string>2019-11-30T22:10:15Z</string>\r\n",
                     "\t\t\t<key>X-Apple-I-Locale</key>\r\n",
                     "\t\t\t<string>en_FR</string>\r\n",
+                    "\t\t\t<key>X-Apple-I-SRL-NO</key>\r\n",
+                    "\t\t\t<string>DNPS88X1HG82</string>\r\n",
                     "\t\t\t<key>X-Apple-I-MD</key>\r\n",
                     "\t\t\t<string>AAAABQAAABCZg6d+upDLWkNW98xGuiOXAAAAAw==</string>\r\n",
                     "\t\t\t<key>X-Apple-I-MD-M</key>\r\n",
                     "\t\t\t<string>faFsm6glupJEkv10H8HxT+cpTVQ/q8mWyPiJRkYfbXJDfIK+eL52Z7GyRCamzWYnvv1N/US6VaawwZG9</string>\r\n",
                     "\t\t\t<key>X-Apple-I-MD-RINFO</key>\r\n",
                     "\t\t\t<string>17106176</string>\r\n",
-                    "\t\t\t<key>X-Apple-I-SRL-NO</key>\r\n",
-                    "\t\t\t<string>DNPS88X1HG82</string>\r\n",
                     "\t\t\t<key>X-Apple-I-TimeZone</key>\r\n",
                     "\t\t\t<string>CET</string>\r\n",
                     "\t\t\t<key>X-Apple-Locale</key>\r\n",
@@ -104,22 +98,26 @@ namespace SideloadIPA
                     "</dict>\r\n",
                     "</plist>\r\n"
                 ), email,
-                key2send);
+                splitPublic);
             
             Console.WriteLine(post1);
             var res1 = PList.ParsePList(new PList(await PostRequest("https://gsa.apple.com/grandslam/GsService2", post1)));
 
             Console.WriteLine(res1);
-
-            var c = res1["Response"]["c"].ToString();
-            var b =  new BigInteger(Convert.FromBase64String(res1["Response"]["B"].ToString())).ToString("X");
-            var salt =  new BigInteger(Convert.FromBase64String(res1["Response"]["s"].ToString())).ToString("X");
             
-            var pk = client.DerivePrivateKey(salt, email, password);
-            var clientSession = client.DeriveSession(eph.Secret, 
+            // c is a string in the form x-xxx-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx:AAA with x lower case hexadecimal numbers and A letters in upper case 
+            var c = res1["Response"]["c"].ToString();
+            
+            // Convert in hexa for SRP.NET
+            var b =  new BigInteger(Convert.FromBase64String(res1["Response"]["B"].ToString())).ToString("X");
+            var salt = new BigInteger(Convert.FromBase64String(res1["Response"]["s"].ToString())).ToString("X");
+            
+            // Generate keys for Apple SRP protocol
+            var pk = srpClient.DerivePrivateKey(salt, email, password);
+            var clientSession = srpClient.DeriveSession(eph.Secret, 
                 b, salt, email, pk);
-
-
+            
+            // POST request to Apple, but it fails 'Your Apple ID or password is incorrect'
             var post2 = string.Format(string.Concat(
                     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n",
                     "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\r\n",
@@ -144,14 +142,14 @@ namespace SideloadIPA
                     "\t\t\t<string>2019-11-30T22:10:15Z</string>\r\n",
                     "\t\t\t<key>X-Apple-I-Locale</key>\r\n",
                     "\t\t\t<string>en_FR</string>\r\n",
+                    "\t\t\t<key>X-Apple-I-SRL-NO</key>\r\n",
+                    "\t\t\t<string>DNPS88X1HG82</string>\r\n",
                     "\t\t\t<key>X-Apple-I-MD</key>\r\n",
                     "\t\t\t<string>AAAABQAAABCZg6d+upDLWkNW98xGuiOXAAAAAw==</string>\r\n",
                     "\t\t\t<key>X-Apple-I-MD-M</key>\r\n",
                     "\t\t\t<string>faFsm6glupJEkv10H8HxT+cpTVQ/q8mWyPiJRkYfbXJDfIK+eL52Z7GyRCamzWYnvv1N/US6VaawwZG9</string>\r\n",
                     "\t\t\t<key>X-Apple-I-MD-RINFO</key>\r\n",
                     "\t\t\t<string>17106176</string>\r\n",
-                    "\t\t\t<key>X-Apple-I-SRL-NO</key>\r\n",
-                    "\t\t\t<string>DNPS88X1HG82</string>\r\n",
                     "\t\t\t<key>X-Apple-I-TimeZone</key>\r\n",
                     "\t\t\t<string>CET</string>\r\n",
                     "\t\t\t<key>X-Apple-Locale</key>\r\n",
@@ -191,10 +189,14 @@ namespace SideloadIPA
 
         public static async Task<string> PostRequest(string url, string request)
         {
-            var _content = new HttpRequestMessage
+            // Setting content of request
+            var content = new HttpRequestMessage
             {
+                // Requests for auth are made to gsa.apple.com 
                 RequestUri = new Uri(url),
+                // Posting
                 Method = HttpMethod.Post,
+                // Headers are from ReProvision from Matchstic
                 Headers =
                 {
                     {
@@ -207,22 +209,24 @@ namespace SideloadIPA
                     {"Accept-Language", "en-us"},
                     {"User-Agent", "ReProvision/1 CFNetwork/978.0.7 Darwin/18.7.0"}
                 },
-                //Content = ((HttpContent) new StringContent(s, Encoding.UTF8, "application/json")),
+                // Plist as content
                 Content = new StringContent(request)
             };
-            client.DefaultRequestHeaders.Add("User-Agent", "ReProvision/1 CFNetwork/978.0.7 Darwin/18.7.0");
-            client.DefaultRequestHeaders
+            // Set user agent
+            Client.DefaultRequestHeaders.Add("User-Agent", "ReProvision/1 CFNetwork/978.0.7 Darwin/18.7.0");
+            Client.DefaultRequestHeaders
                 .Accept
                 .Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            var response = await client.SendAsync(_content);
+            
+            // Post request, getting answer, and convert it to easily parsable Newtonsoft.Json's JObject
+            var response = await Client.SendAsync(content);
             var responseString = await response.Content.ReadAsStringAsync();
-            // Console.WriteLine(responseString);
             var handle = PList.ParsePList(new PList(responseString));
 
+            // Checking if Error Code is equals to 0
             if (handle["Response"]["Status"]["ec"].ToString() != "0")
                 throw new AppleException(handle["Response"]["Status"]);
 
-            // Console.WriteLine(responseString);
 
             return responseString;
         }

@@ -12,6 +12,11 @@ namespace SideloadIPA
 			
 		}
 		
+		/// <summary>
+		/// Parse Plist XML to a JSON JObject.
+		/// This code is unreadable, since I took it from one of mine old projects that I decompiled.
+		/// It just works, not going to comment it further.
+		/// </summary>
 		public static JObject ParsePList(PList plist)
 		{
 			JObject jObject = new JObject();
@@ -25,6 +30,7 @@ namespace SideloadIPA
 					}
 					catch
 					{
+						// ignored
 					}
 				}
 
@@ -45,6 +51,7 @@ namespace SideloadIPA
 						}
 						catch
 						{
+							// ignored
 						}
 					}
 
@@ -73,6 +80,7 @@ namespace SideloadIPA
 					}
 					catch
 					{
+						// ignored
 					}
 				}
 			}
@@ -90,17 +98,24 @@ namespace SideloadIPA
 			Clear();
 			XDocument xDocument = XDocument.Parse(file);
 			XElement xElement = xDocument.Element("plist");
-			XElement xElement2 = xElement.Element("dict");
-			IEnumerable<XElement> elements = xElement2.Elements();
-			Parse(this, elements);
+			if (xElement != null)
+			{
+				XElement xElement2 = xElement.Element("dict");
+				if (xElement2 != null)
+				{
+					IEnumerable<XElement> elements = xElement2.Elements();
+					Parse(this, elements);
+				}
+			}
 		}
 
 		private void Parse(PList dict, IEnumerable<XElement> elements)
 		{
-			for (int i = 0; i < elements.Count(); i += 2)
+			var xElements = elements.ToList();
+			for (int i = 0; i < xElements.Count(); i += 2)
 			{
-				XElement xElement = elements.ElementAt(i);
-				XElement val = elements.ElementAt(i + 1);
+				XElement xElement = xElements.ElementAt(i);
+				XElement val = xElements.ElementAt(i + 1);
 				dict[xElement.Value] = (object) ParseValue(val);
 			}
 		}
