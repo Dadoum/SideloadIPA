@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SideloadIPA", "SideloadIPA\SideloadIPA.csproj", "{0BD2D6D5-8CA3-4F6A-B48F-4683365C3928}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "srp", "..\..\..\..\media\dadoum\HDD1\GenerateCertificates\GenerateCertificates\srp.net-master\src\srp\srp.csproj", "{1B9D80F6-4D0D-42B9-B8A8-2B5DCC8D39E0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0BD2D6D5-8CA3-4F6A-B48F-4683365C3928}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0BD2D6D5-8CA3-4F6A-B48F-4683365C3928}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0BD2D6D5-8CA3-4F6A-B48F-4683365C3928}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0BD2D6D5-8CA3-4F6A-B48F-4683365C3928}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B9D80F6-4D0D-42B9-B8A8-2B5DCC8D39E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B9D80F6-4D0D-42B9-B8A8-2B5DCC8D39E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B9D80F6-4D0D-42B9-B8A8-2B5DCC8D39E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B9D80F6-4D0D-42B9-B8A8-2B5DCC8D39E0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
