@@ -4,6 +4,8 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Numerics;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using SecureRemotePassword;
 
@@ -23,8 +25,9 @@ namespace SideloadIPA
         public static async Task Main(string[] args)
         {
             // Apple ID for testing, use temp-mail.org to login.
-            var email = "compte.adam.c@gmail.com";
-            var password = "Newmail90";
+            // Security Questions: Mailart, Montcuq
+            var email = "hello@mailart.top";
+            var password = "Mailart90";
 
             Cookies.Add(new Cookie("dslang", "US-EN", "/", "gsa.apple.com"));
             ServicePointManager
@@ -32,7 +35,8 @@ namespace SideloadIPA
                 (sender, cert, chain, sslPolicyErrors) => true;
 
             // Initiate SRP Client, and generate ephemeral keys
-            var srpClient = new SrpClient();
+            var srpClient = new SrpClient(SrpParameters.Create2048<SHA256>());
+
             var eph = srpClient.GenerateEphemeral();
             
             // Split keys into lines
@@ -50,6 +54,7 @@ namespace SideloadIPA
                     "\t</dict>\r\n",
                     "\t<key>Request</key>\r\n",
                     "\t<dict>\r\n",
+                    // A field of SRP
                     "\t\t<key>A2k</key>\r\n",
                     "\t\t<data>\r\n",
                     "{1}",
@@ -62,6 +67,7 @@ namespace SideloadIPA
                     "\t\t\t<string>en_FR</string>\r\n",
                     "\t\t\t<key>X-Apple-I-SRL-NO</key>\r\n",
                     "\t\t\t<string>DNPS88X1HG82</string>\r\n",
+                    // Fields of Anisette data
                     "\t\t\t<key>X-Apple-I-MD</key>\r\n",
                     "\t\t\t<string>AAAABQAAABCZg6d+upDLWkNW98xGuiOXAAAAAw==</string>\r\n",
                     "\t\t\t<key>X-Apple-I-MD-M</key>\r\n",
@@ -110,10 +116,10 @@ namespace SideloadIPA
             
             // Convert in hexa for SRP.NET
             var b =  new BigInteger(Convert.FromBase64String(res1["Response"]["B"].ToString())).ToString("X");
-            var salt = new BigInteger(Convert.FromBase64String(res1["Response"]["s"].ToString())).ToString("X");
+            var salt = Convert.FromBase64String(res1["Response"]["s"].ToString());
             
             // Generate keys for Apple SRP protocol
-            var pk = srpClient.DerivePrivateKey(salt, email, password);
+            var pk = srpClient.DerivePrivateKey(salt, int.Parse(res1["Response"]["i"].ToString()), password);
             var clientSession = srpClient.DeriveSession(eph.Secret, 
                 b, salt, email, pk);
             
@@ -130,10 +136,12 @@ namespace SideloadIPA
                     "\t</dict>\r\n",
                     "\t<key>Request</key>\r\n",
                     "\t<dict>\r\n",
+                    // A field of SRP
                     "\t\t<key>M1</key>\r\n",
                     "\t\t<data>\r\n",
                     "\t\t{2}\r\n",
                     "\t\t</data>\r\n",
+                    // A field of Apple's GrandSlam
                     "\t\t<key>c</key>\r\n",
                     "\t\t<string>{1}</string>\r\n",
                     "\t\t<key>cpd</key>\r\n",
@@ -144,6 +152,7 @@ namespace SideloadIPA
                     "\t\t\t<string>en_FR</string>\r\n",
                     "\t\t\t<key>X-Apple-I-SRL-NO</key>\r\n",
                     "\t\t\t<string>DNPS88X1HG82</string>\r\n",
+                    // Fields of Anisette data
                     "\t\t\t<key>X-Apple-I-MD</key>\r\n",
                     "\t\t\t<string>AAAABQAAABCZg6d+upDLWkNW98xGuiOXAAAAAw==</string>\r\n",
                     "\t\t\t<key>X-Apple-I-MD-M</key>\r\n",
@@ -176,7 +185,7 @@ namespace SideloadIPA
                     "</plist>\r\n"
                 ), email,
                 c,
-                ToB64(clientSession.Proof));
+                Convert.ToBase64String(clientSession.Proof));
             
             Console.WriteLine(post2);
             var res2 = PList.ParsePList(new PList(await PostRequest("https://gsa.apple.com/grandslam/GsService2", post2)));

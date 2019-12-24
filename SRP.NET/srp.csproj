@@ -1,0 +1,107 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>SRP-6a protocol implementation for .NET Standard 2.0 and .NET Framework 3.5+</Description>
+    <Copyright>Copyright © 2018 Alexey Yakovlev</Copyright>
+    <AssemblyTitle>srp</AssemblyTitle>
+    <Version>1.0.4</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>$(Version).0</FileVersion>
+    <Authors>Alexey Yakovlev</Authors>
+    <TargetFrameworks>netcoreapp2.2</TargetFrameworks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AssemblyName>srp</AssemblyName>
+    <PackageId>srp</PackageId>
+    <PackageTags>srp;srp-6a;security;authentication</PackageTags>
+    <PackageIconUrl>https://raw.githubusercontent.com/secure-remote-password/srp.net/master/images/srp.net.png</PackageIconUrl>
+    <PackageProjectUrl>https://github.com/secure-remote-password/srp.net</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/secure-remote-password/srp.net/blob/master/LICENSE</PackageLicenseUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/secure-remote-password/srp.net</RepositoryUrl>
+    <AssemblyOriginatorKeyFile>..\srp.snk</AssemblyOriginatorKeyFile>
+    <DebugType>full</DebugType>
+    <RootNamespace>SecureRemotePassword</RootNamespace>
+    <PackageReleaseNotes>What's new:
+
+      v1.0.4:
+      — Fixed padding issues in the arithmetic operations.
+
+      v1.0.3:
+      — Fixed SrpParameters thread safety issue.
+
+      v1.0.2:
+      — Fixed sha384/sha512 support in .NET Standard 1.6 version.
+
+      v1.0.1:
+      — Enabled .NET Standard 1.6 support.
+
+      v1.0.0:
+      — Initial release.
+    </PackageReleaseNotes>
+    <CodeAnalysisRuleSet>..\srp.ruleset</CodeAnalysisRuleSet>
+    <BaseOutputPath>..\..\bin\</BaseOutputPath>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net35'">
+    <Compile Remove="System/BigIntegerFx3.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net35' ">
+    <Reference Include="System" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net40' ">
+    <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
+    <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
+  </ItemGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net35' ">
+    <DefineConstants>$(DefineConstants);USE_CRYPTO_CONFIG</DefineConstants>
+    <FrameworkPathOverride>C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v3.5\Profile\Client</FrameworkPathOverride>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net40' ">
+    <DefineConstants>$(DefineConstants);USE_CRYPTO_CONFIG</DefineConstants>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' ">
+    <DefineConstants>$(DefineConstants);USE_CRYPTO_CONFIG</DefineConstants>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+    <TargetFrameworkIdentifier>.NETFramework</TargetFrameworkIdentifier>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <DefineConstants>$(DefineConstants);USE_CRYPTO_CONFIG</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
+    <PackageReference Include="System.Globalization" Version="4.3.0" />
+    <PackageReference Include="System.Linq" Version="4.3.0" />
+    <PackageReference Include="System.Runtime" Version="4.3.0" />
+    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.0" />
+    <PackageReference Include="System.Runtime.Numerics" Version="4.3.0" />
+    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <PackageReference Include="System.Globalization" Version="4.3.0" />
+    <PackageReference Include="System.Linq" Version="4.3.0" />
+    <PackageReference Include="System.Runtime" Version="4.3.0" />
+    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.0" />
+    <PackageReference Include="System.Runtime.Numerics" Version="4.3.0" />
+    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
+  </ItemGroup>
+
+</Project>
